@@ -1,0 +1,39 @@
+# Comp AI on Render — reference blueprint for the Vultron-AI/comp fork.
+# Services are created via the Render API into the "Comp AI" project so they
+# attach to that project's environment. This file documents the shape; the
+# build-target pinning is handled by Dockerfile.app / Dockerfile.migrator
+# (Render cannot select a multi-stage target).
+#
+# app    -> Dockerfile.app        (final stage: app)
+# portal -> Dockerfile            (root; final stage is already portal)
+# migrate+seed -> Dockerfile.migrator, run once as a job
+#
+# Secrets (RESEND_API_KEY, TRIGGER_SECRET_KEY, AUTH_SECRET, SECRET_KEY) are set
+# directly on the Render services as sync:false — never committed here.
+
+services:
+  - type: web
+    name: comp-ai-app
+    env: docker
+    dockerfilePath: ./Dockerfile.app
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: NEXT_PUBLIC_SELF_HOSTED
+        value: "true"
+      - key: NEXT_PUBLIC_BETTER_AUTH_URL
+        value: https://comp-ai-app.onrender.com
+      - key: BETTER_AUTH_URL
+        value: https://comp-ai-app.onrender.com
+      - key: NEXT_PUBLIC_PORTAL_URL
+        value: https://comp-ai-portal.onrender.com
+
+  - type: web
+    name: comp-ai-portal
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: NEXT_PUBLIC_BETTER_AUTH_URL
+        value: https://comp-ai-portal.onrender.com
